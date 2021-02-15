@@ -1,5 +1,7 @@
 const height: number = 600;
 const width: number = 800;
+const trackLength: number = 1000;
+const trackSamples: number = 5;
 class Vector {
     private x: number;
     private y: number;
@@ -62,17 +64,33 @@ class Ball {
     private quality: number;
     private name: string;
     private radius: number;
+    private track: boolean;
 
-    public constructor(name: string, site: Vector, speed: Vector, radius: number, quality: number, color: string) {
+    private trackNums: number = 0;
+    private tracks: Vector[] = new Array<Vector>();
+
+    public constructor(name: string, site: Vector, speed: Vector, radius: number, quality: number, color: string, track: boolean) {
         this.name = name;
         this.site = site;
         this.color = color;
         this.speed = speed;
         this.quality = quality;
         this.radius = radius;
+        this.track = track;
+        if (this.track) {
+            this.tracks.push(this.site.clone());
+        }
     }
 
     public move() {
+        if (this.trackNums % trackSamples == 0) {
+            if (this.tracks.length > trackLength) {
+                this.tracks.shift();
+            }
+            this.tracks.push(this.site.clone());
+        }
+
+        this.trackNums++;
         this.site = this.site.vadd(this.speed);
     }
     public crash(balls: Ball[]) {
@@ -132,11 +150,28 @@ class Ball {
         g.strokeStyle = this.color;
         g.beginPath();
         g.arc(this.site.getX(), this.site.getY(), this.radius, 0, Math.PI * 2, false);
+
         g.stroke();
+        g.fill();
+
+        if (this.track) {
+            g.beginPath();
+            let flag = true;
+            this.tracks.forEach((t) => {
+                if (flag) {
+                    g.moveTo(t.getX(), t.getY());
+                    flag = false;
+                }
+                g.lineTo(t.getX(), t.getY());
+            })
+
+            g.stroke();
+        }
+
     }
 
     public clone(): Ball {
-        return new Ball(this.name, this.site, this.speed, this.radius, this.quality, this.color);
+        return new Ball(this.name, this.site, this.speed, this.radius, this.quality, this.color, this.track);
     }
 }
 
@@ -189,15 +224,15 @@ let canvas = document.getElementById("canvas") as HTMLCanvasElement;
 let context = canvas.getContext("2d");
 
 let balls: Ball[] = [
-    new Ball("球-1", new Vector(30, 30), new Vector(4, 4), 20, 2, "#00ff00"),
-    new Ball("球-2", new Vector(500, 200), new Vector(0, 0), 20, 2, "#00ffff"),
-    new Ball("球-3", new Vector(120, 80), new Vector(0, 0), 20, 2, "#0000ff"),
-    new Ball("球-4", new Vector(700, 40), new Vector(0, 0), 20, 2, "#f0f000"),
-    new Ball("球-5", new Vector(600, 140), new Vector(0, 0), 20, 2, "#fff000"),
-    new Ball("球-6", new Vector(500, 240), new Vector(0, 0), 20, 2, "#ff0f00"),
-    new Ball("球-7", new Vector(100, 140), new Vector(0, 0), 20, 2, "#ff00ff"),
-    new Ball("球-8", new Vector(240, 340), new Vector(0, 0), 20, 2, "#ff0fff"),
-    new Ball("球-9", new Vector(500, 120), new Vector(0, 0), 20, 2, "#ff0ff0"),
+    new Ball("球-1", new Vector(30, 30), new Vector(4, 4), 20, 2, "#00ff00", true),
+    new Ball("球-2", new Vector(500, 200), new Vector(3, 0), 20, 2, "#00ffff", false),
+    new Ball("球-3", new Vector(120, 80), new Vector(0, 4), 20, 2, "#0000ff", false),
+    new Ball("球-4", new Vector(700, 40), new Vector(0, 8), 20, 2, "#f0f000", false),
+    new Ball("球-5", new Vector(600, 140), new Vector(10, 0), 20, 2, "#fff000", false),
+    new Ball("球-6", new Vector(500, 280), new Vector(0, 12), 20, 2, "#ff0f00", false),
+    new Ball("球-7", new Vector(100, 140), new Vector(5, 0), 20, 2, "#ff00ff", false),
+    new Ball("球-8", new Vector(240, 340), new Vector(0, 5), 20, 2, "#ff0fff", false),
+    new Ball("球-9", new Vector(500, 120), new Vector(0, 4), 20, 2, "#ff0ff0", false),
 ]
 let table: Table = new Table(balls, context);
 table.start();
